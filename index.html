@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RF Scanner Logins</title>
+  <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap');
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: #0f172a;
+      color: #f8fafc;
+      overflow-y: scroll;
+      scroll-snap-type: y mandatory;
+    }
+
+    /* Fixed top header showing ONLY 'RF Scanner Logins' */
+    .nav-header {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 52px;
+      background: rgba(15, 23, 42, 0.95);
+      backdrop-filter: blur(12px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0 24px;
+      z-index: 1000;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .nav-title {
+      font-size: 1.05rem;
+      font-weight: 800;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: #38bdf8;
+    }
+
+    /* Full-page snap sections for each gun */
+    .page-section {
+      height: 100vh;
+      width: 100vw;
+      scroll-snap-align: start;
+      scroll-snap-stop: always;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      padding: 68px 24px 28px;
+      position: relative;
+    }
+
+    .card {
+      background: #1e293b;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 20px;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+      max-width: 900px;
+      width: 100%;
+      padding: 28px 36px;
+      display: flex;
+      flex-direction: column;
+      gap: 22px;
+    }
+
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid #334155;
+      padding-bottom: 16px;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .scanner-info {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .gun-badge {
+      background: #0284c7;
+      color: #fff;
+      font-size: 1.25rem;
+      font-weight: 800;
+      padding: 6px 18px;
+      border-radius: 999px;
+      letter-spacing: 0.05em;
+    }
+
+    .meta-tags {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .badge {
+      background: #0f172a;
+      border: 1px solid #334155;
+      font-size: 0.82rem;
+      font-weight: 600;
+      padding: 5px 12px;
+      border-radius: 6px;
+      color: #94a3b8;
+    }
+
+    .badge strong {
+      color: #f1f5f9;
+    }
+
+    /* Barcode Grid */
+    .barcode-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 18px;
+    }
+
+    .barcode-card {
+      background: #ffffff;
+      border-radius: 14px;
+      padding: 16px 18px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: space-between;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2);
+    }
+
+    .barcode-label {
+      font-size: 0.78rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: #475569;
+      margin-bottom: 6px;
+      align-self: flex-start;
+    }
+
+    .barcode-svg {
+      width: 100%;
+      max-height: 90px;
+    }
+
+    .barcode-val {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: #0f172a;
+      margin-top: 6px;
+      letter-spacing: 0.04em;
+    }
+
+    /* Print styles */
+    @media print {
+      body {
+        background: #fff;
+        color: #000;
+        overflow: visible;
+      }
+      .nav-header {
+        display: none;
+      }
+      .page-section {
+        height: auto;
+        min-height: 100vh;
+        page-break-after: always;
+        break-after: page;
+        padding: 40px;
+      }
+      .card {
+        background: #fff;
+        border: 1px solid #ccc;
+        box-shadow: none;
+        color: #000;
+      }
+      .barcode-card {
+        border: 1px solid #ddd;
+        box-shadow: none;
+      }
+      .badge {
+        background: #f1f5f9;
+        color: #334155;
+        border-color: #cbd5e1;
+      }
+      .badge strong {
+        color: #0f172a;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <header class="nav-header">
+    <div class="nav-title">RF Scanner Logins</div>
+  </header>
+
+  <div id="pages-container"></div>
+
+  <script>
+    const data = [
+      {"scanner": "LES", "gun": 1, "team": "EXPORT", "login": "TC1", "password": "trug2023", "p_login": "N/A", "p_pass": "N/A", "task": "EXPORT", "printer": "TRU-WHS-DSP-01"},
+      {"scanner": "WILL", "gun": 2, "team": "DBA", "login": "TC2", "password": "trug2242", "p_login": "N/A", "p_pass": "N/A", "task": "DBA", "printer": "TRU-WHS-DSP-01"},
+      {"scanner": "JASON", "gun": 3, "team": "DBA", "login": "TC3", "password": "trug3363", "p_login": "N/A", "p_pass": "N/A", "task": "DBA", "printer": "TRU-WHS-DSP-01"},
+      {"scanner": "GARRY", "gun": 4, "team": "DBA", "login": "TC4", "password": "trug4484", "p_login": "N/A", "p_pass": "N/A", "task": "DBA", "printer": "TRU-WHS-DSP-01"},
+      {"scanner": "TANGO", "gun": 5, "team": "DBA", "login": "TC5", "password": "trug5515", "p_login": "N/A", "p_pass": "N/A", "task": "DBA", "printer": "TRU-WHS-DSP-01"},
+      {"scanner": "POAUL", "gun": 6, "team": "DBA", "login": "TC6", "password": "trug6626", "p_login": "N/A", "p_pass": "N/A", "task": "DBA", "printer": "TRU-WHS-DSP-01"},
+      {"scanner": "DOUGLAS (DBA)", "gun": 7, "team": "DBA", "login": "TC7", "password": "trug7747", "p_login": "N/A", "p_pass": "N/A", "task": "DBA", "printer": "TRU-WHS-DSP-01"},
+      {"scanner": "MATT B", "gun": 8, "team": "DBA", "login": "TC8", "password": "trug8868", "p_login": "N/A", "p_pass": "N/A", "task": "DBA", "printer": "TRU-WHS-DSP-01"},
+      {"scanner": "STEPHEN", "gun": 9, "team": "DBA", "login": "TC9", "password": "trug9989", "p_login": "N/A", "p_pass": "N/A", "task": "DBA", "printer": "TRU-WHS-DSP-01"},
+      {"scanner": "WINNIE T.L", "gun": 10, "team": "DBA", "login": "TC10", "password": "trug1121", "p_login": "N/A", "p_pass": "N/A", "task": "DBA", "printer": "TRU-WHS-DSP-01"},
+      {"scanner": "BELT 1", "gun": 11, "team": "DBA", "login": "TC11", "password": "trug2221", "p_login": "N/A", "p_pass": "N/A", "task": "DBA- BELT 1", "printer": "TRU-WHS-DSP-01"},
+      {"scanner": "BELT 2", "gun": 12, "team": "DBA", "login": "TC12", "password": "trug2442", "p_login": "N/A", "p_pass": "N/A", "task": "DBA-BELT 2", "printer": "TRU-WHS-DSP-02"},
+      {"scanner": "BELT 3", "gun": 13, "team": "DBA", "login": "TC13", "password": "trug2663", "p_login": "N/A", "p_pass": "N/A", "task": "DBA BELT 3", "printer": "TRU-WHS-DSP-03"},
+      {"scanner": "VIVIAN", "gun": 14, "team": "AAG", "login": "TC14", "password": "trug1411", "p_login": "TC14P", "p_pass": "trug1422", "task": "AAG", "printer": "FUJI XEROX APEOS PORT VII"},
+      {"scanner": "AJ", "gun": 15, "team": "AAG", "login": "TC15", "password": "trug1511", "p_login": "TC15P", "p_pass": "trug1522", "task": "AAG", "printer": "FUJI XEROX APEOS PORT VII"},
+      {"scanner": "DISPATCH 1", "gun": 16, "team": "AAG", "login": "TC16", "password": "trug1611", "p_login": "TC16P", "p_pass": "trug1622", "task": "AAG", "printer": "FUJI XEROX APEOS PORT VII"},
+      {"scanner": "DENNIS", "gun": 17, "team": "AAG", "login": "TC17", "password": "trug1711", "p_login": "TC17P", "p_pass": "trug1722", "task": "AAG", "printer": "FUJI XEROX APEOS PORT VII"},
+      {"scanner": "RAJA", "gun": 18, "team": "AAG", "login": "TC18", "password": "trug2025", "p_login": "TC18P", "p_pass": "trug1822", "task": "AAG", "printer": "FUJI XEROX APEOS PORT VII"},
+      {"scanner": "LOU", "gun": 19, "team": "AAG", "login": "TC19", "password": "trug1911", "p_login": "TC19P", "p_pass": "trug1922", "task": "AAG", "printer": "FUJI XEROX APEOS PORT VII"},
+      {"scanner": "CRAIG", "gun": 20, "team": "AAG", "login": "TC20", "password": "trug2027", "p_login": "TC20P", "p_pass": "trug2022", "task": "AAG", "printer": "FUJI XEROX APEOS PORT VII"},
+      {"scanner": "DISPATCH 2", "gun": 21, "team": "AAG", "login": "TC21", "password": "trug2028", "p_login": "TC21P", "p_pass": "trug2122", "task": "AAG", "printer": "TRU-WHS-DSP-006"},
+      {"scanner": "DISPATCH 3", "gun": 22, "team": "AAG", "login": "TC22", "password": "trug2029", "p_login": "TC22P", "p_pass": "trug2222", "task": "AAG", "printer": "TRU-WHS-DSP-007"},
+      {"scanner": "DOUGLAS (AAG)", "gun": 23, "team": "AAG", "login": "TC23", "password": "trug2883", "p_login": "TC23P", "p_pass": "trug2322", "task": "AAG", "printer": "TRU-WHS-DSP-006"},
+      {"scanner": "BINDU", "gun": 24, "team": "AAG", "login": "TC24", "password": "trug2024", "p_login": "TC24P", "p_pass": "trug2422", "task": "AAG", "printer": "TRU-WHS-DSP-007"},
+      {"scanner": "ASAD", "gun": 25, "team": "AAG", "login": "TC25", "password": "trug2025", "p_login": "TC25P", "p_pass": "trug2522", "task": "AAG", "printer": "FUJI XEROX APEOS PORT VII"},
+      {"scanner": "ROB", "gun": 26, "team": "AAG", "login": "TC26", "password": "trug2026", "p_login": "TC26P", "p_pass": "trug2622", "task": "AAG", "printer": "TRU-BROTHER01"},
+      {"scanner": "PRIYA", "gun": 27, "team": "AAG", "login": "TC27", "password": "trug2027", "p_login": "TC27P", "p_pass": "trug2722", "task": "AAG", "printer": "TRU-BROTHER01"},
+      {"scanner": "PAULO", "gun": 28, "team": "OUTBOUND", "login": "TC28", "password": "trugtc28", "p_login": "N/A", "p_pass": "N/A", "task": "OUTBOUND", "printer": "TRU-WHS-DSP-10"},
+      {"scanner": "SEAN T.L", "gun": 29, "team": "OUTBOUND", "login": "TC29", "password": "trugtc29", "p_login": "N/A", "p_pass": "N/A", "task": "OUTBOUND", "printer": "TRU-WHS-DSP-10"},
+      {"scanner": "SENTHU", "gun": 30, "team": "OUTBOUND", "login": "TC30", "password": "trugtc30", "p_login": "N/A", "p_pass": "N/A", "task": "OUTBOUND", "printer": "TRU-WHS-DSP-10"},
+      {"scanner": "ROSIE", "gun": 31, "team": "OUTBOUND", "login": "TC31", "password": "trugtc31", "p_login": "N/A", "p_pass": "N/A", "task": "OUTBOUND", "printer": "TRU-WHS-DSP-10"},
+      {"scanner": "TEEK", "gun": 32, "team": "INBOUND", "login": "TC32", "password": "trugtc32", "p_login": "N/A", "p_pass": "N/A", "task": "IN/EX", "printer": "TRU-WHS-DSP-10"},
+      {"scanner": "MATT D", "gun": 33, "team": "INBOUND", "login": "TC33", "password": "trugtc33", "p_login": "N/A", "p_pass": "N/A", "task": "IN/EX", "printer": "TRU-WHS-DSP-10"},
+      {"scanner": "YONAS", "gun": 34, "team": "INBOUND", "login": "TC34", "password": "trugtc34", "p_login": "N/A", "p_pass": "N/A", "task": "IN/EX", "printer": "TRU-WHS-DSP-10"},
+      {"scanner": "SIMON", "gun": 35, "team": "EXPORT", "login": "TC35", "password": "trugtc35", "p_login": "N/A", "p_pass": "N/A", "task": "IN/EX", "printer": "TRU-WHS-DSP-10"},
+      {"scanner": "HASIRU", "gun": 36, "team": "EXPORT", "login": "TC36", "password": "trugtc36", "p_login": "N/A", "p_pass": "N/A", "task": "IN/EX", "printer": "TRU-WHS-DSP-10"},
+      {"scanner": "JACKSON T.L", "gun": 37, "team": "SPARE", "login": "TC37", "password": "trugtc37", "p_login": "N/A", "p_pass": "N/A", "task": "IN/EX", "printer": "TRU-WHS-DSP-01"},
+      {"scanner": "SPARE", "gun": 38, "team": "SPARE", "login": "TC38", "password": "trugtc38", "p_login": "N/A", "p_pass": "N/A", "task": "ALL", "printer": "TRU-WHS-DSP-01"},
+      {"scanner": "SPARE", "gun": 39, "team": "SPARE", "login": "TC39", "password": "trugtc39", "p_login": "N/A", "p_pass": "N/A", "task": "ALL", "printer": "FUJI XEROX APEOS PORT VII"},
+      {"scanner": "SPARE", "gun": 40, "team": "SPARE", "login": "TC40", "password": "trugtc40", "p_login": "N/A", "p_pass": "N/A", "task": "ALL", "printer": "FUJI XEROX APEOS PORT VII"},
+      {"scanner": "SPARE", "gun": 41, "team": "SPARE", "login": "TC41", "password": "trugtc41", "p_login": "N/A", "p_pass": "N/A", "task": "ALL", "printer": "FUJI XEROX APEOS PORT VII"}
+    ];
+
+    // Filter out N/A and SPARE barcode values (case-insensitive)
+    function isIgnored(val) {
+      if (!val) return true;
+      const v = val.toString().trim().toUpperCase();
+      return v === '' || v === 'N/A' || v === 'NA' || v === 'SPARE';
+    }
+
+    const container = document.getElementById('pages-container');
+
+    data.forEach((row, index) => {
+      const section = document.createElement('section');
+      section.className = 'page-section';
+      section.id = `row-${index}`;
+
+      // Barcode fields: Login, Password, Priority Login, Priority Password
+      const fields = [
+        { label: 'Login', val: row.login },
+        { label: 'Password', val: row.password },
+        { label: 'Priority Login', val: row.p_login },
+        { label: 'Priority Password', val: row.p_pass }
+      ].filter(f => !isIgnored(f.val));
+
+      let barcodesHtml = '';
+      fields.forEach((f, fIdx) => {
+        const svgId = `bc-${index}-${fIdx}`;
+        barcodesHtml += `
+          <div class="barcode-card">
+            <span class="barcode-label">${f.label}</span>
+            <svg class="barcode-svg" id="${svgId}"></svg>
+            <span class="barcode-val">${f.val}</span>
+          </div>
+        `;
+      });
+
+      // Card layout without footer pagination or operator names
+      section.innerHTML = `
+        <div class="card">
+          <div class="card-header">
+            <div class="scanner-info">
+              <span class="gun-badge">GUN ${row.gun}</span>
+            </div>
+            <div class="meta-tags">
+              <span class="badge">Team: <strong>${row.team}</strong></span>
+              <span class="badge">Account / Task: <strong>${row.task}</strong></span>
+              <span class="badge">Printer: <strong>${row.printer}</strong></span>
+            </div>
+          </div>
+          <div class="barcode-grid">
+            ${barcodesHtml}
+          </div>
+        </div>
+      `;
+
+      container.appendChild(section);
+
+      // Render Barcodes
+      fields.forEach((f, fIdx) => {
+        const svgId = `#bc-${index}-${fIdx}`;
+        try {
+          JsBarcode(svgId, f.val, {
+            format: "CODE128",
+            displayValue: false,
+            margin: 0,
+            height: 52,
+            width: 2.2,
+            lineColor: "#0f172a"
+          });
+        } catch (e) {
+          console.error("Barcode render error:", e);
+        }
+      });
+    });
+  </script>
+</body>
+</html>
