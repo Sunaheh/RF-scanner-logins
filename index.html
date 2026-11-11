@@ -22,7 +22,7 @@
       scroll-snap-type: y mandatory;
     }
 
-    /* Fixed top header showing ONLY 'RF Scanner Logins' */
+    /* Fixed top header */
     .nav-header {
       position: fixed;
       top: 0;
@@ -128,8 +128,10 @@
       gap: 18px;
     }
 
+    /* Barcode Card Box */
     .barcode-card {
       background: #ffffff;
+      border: 2px solid transparent;
       border-radius: 14px;
       padding: 16px 18px;
       display: flex;
@@ -137,6 +139,21 @@
       align-items: center;
       justify-content: space-between;
       box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2);
+      cursor: pointer;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+      transition: border-color 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease;
+      position: relative;
+    }
+
+    .barcode-card:active {
+      transform: scale(0.99);
+    }
+
+    /* Active Highlight */
+    .barcode-card.active-barcode {
+      border-color: #0284c7;
+      box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.35);
     }
 
     .barcode-label {
@@ -147,11 +164,32 @@
       color: #475569;
       margin-bottom: 6px;
       align-self: flex-start;
+      transition: color 0.15s ease;
+    }
+
+    .barcode-card.active-barcode .barcode-label {
+      color: #0284c7;
+    }
+
+    /* Barcode SVG Container & vanishing magic */
+    .barcode-svg-wrapper {
+      width: 100%;
+      height: 90px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
 
     .barcode-svg {
       width: 100%;
       max-height: 90px;
+      transition: opacity 0.15s ease;
+    }
+
+    /* When another barcode on the card is tapped, vanish the barcode lines */
+    .barcode-card.vanished .barcode-svg {
+      opacity: 0;
+      visibility: hidden;
     }
 
     .barcode-val {
@@ -161,6 +199,10 @@
       color: #0f172a;
       margin-top: 6px;
       letter-spacing: 0.04em;
+    }
+
+    .barcode-card.vanished .barcode-val {
+      color: #94a3b8;
     }
 
     /* Print styles */
@@ -189,6 +231,10 @@
       .barcode-card {
         border: 1px solid #ddd;
         box-shadow: none;
+      }
+      .barcode-card.vanished .barcode-svg {
+        opacity: 1 !important;
+        visibility: visible !important;
       }
       .badge {
         background: #f1f5f9;
@@ -254,7 +300,6 @@
       {"scanner": "SPARE", "gun": 41, "team": "SPARE", "login": "TC41", "password": "trugtc41", "p_login": "N/A", "p_pass": "N/A", "task": "ALL", "printer": "FUJI XEROX APEOS PORT VII"}
     ];
 
-    // Filter out N/A and SPARE barcode values (case-insensitive)
     function isIgnored(val) {
       if (!val) return true;
       const v = val.toString().trim().toUpperCase();
@@ -268,7 +313,6 @@
       section.className = 'page-section';
       section.id = `row-${index}`;
 
-      // Barcode fields: Login, Password, Priority Login, Priority Password
       const fields = [
         { label: 'Login', val: row.login },
         { label: 'Password', val: row.password },
@@ -280,15 +324,16 @@
       fields.forEach((f, fIdx) => {
         const svgId = `bc-${index}-${fIdx}`;
         barcodesHtml += `
-          <div class="barcode-card">
+          <div class="barcode-card" onclick="isolateBarcode(this)">
             <span class="barcode-label">${f.label}</span>
-            <svg class="barcode-svg" id="${svgId}"></svg>
+            <div class="barcode-svg-wrapper">
+              <svg class="barcode-svg" id="${svgId}"></svg>
+            </div>
             <span class="barcode-val">${f.val}</span>
           </div>
         `;
       });
 
-      // Card layout without footer pagination or operator names
       section.innerHTML = `
         <div class="card">
           <div class="card-header">
@@ -309,7 +354,6 @@
 
       container.appendChild(section);
 
-      // Render Barcodes
       fields.forEach((f, fIdx) => {
         const svgId = `#bc-${index}-${fIdx}`;
         try {
@@ -326,6 +370,31 @@
         }
       });
     });
+
+    // Magic tap function
+    function isolateBarcode(cardElement) {
+      const grid = cardElement.closest('.barcode-grid');
+      const allCards = grid.querySelectorAll('.barcode-card');
+      const isAlreadyActive = cardElement.classList.contains('active-barcode');
+
+      if (isAlreadyActive) {
+        // Tapping the same card again brings all barcodes back
+        allCards.forEach(card => {
+          card.classList.remove('active-barcode', 'vanished');
+        });
+      } else {
+        // Show ONLY the tapped barcode, vanish all other barcodes in the grid
+        allCards.forEach(card => {
+          if (card === cardElement) {
+            card.classList.add('active-barcode');
+            card.classList.remove('vanished');
+          } else {
+            card.classList.remove('active-barcode');
+            card.classList.add('vanished');
+          }
+        });
+      }
+    }
   </script>
 </body>
 </html>
